@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Location Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--hub-font, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+      font-size: 13px;
+      background: var(--hub-bg, #f9fafb);
+      color: var(--hub-text, #111827);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #map {
+      flex: 1;
+      width: 100%;
+    }
+
+    .empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: var(--hub-text-muted, #6b7280);
+      font-size: 12px;
+      text-align: center;
+      padding: 16px;
+    }
+    .empty-icon { font-size: 28px; opacity: 0.5; }
+
+    .member-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+      font-size: 13px;
+      font-weight: 700;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<div id="empty" class="empty" style="display:none">
+  <div class="empty-icon">📍</div>
+  <div>No locations shared yet</div>
+</div>
+
+<script type="module">
+const CONTEXT = window.__CONTEXT_URL ?? "";
+
+const AVATAR_COLORS = [
+  "#0284c7","#0891b2","#059669","#7c3aed","#db2777","#ea580c","#65a30d","#b45309",
+];
+function memberColor(id) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) & 0xffffff;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+function initial(name) { return String(name).trim()[0]?.toUpperCase() ?? "?"; }
+function esc(s) {
+  return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function timeAgo(iso) {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  const hours = Math.floor(diff / 3_600_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+async function load() {
+  const [locRes, membersRes] = await Promise.all([
+    fetch("/api/location"),
+    CONTEXT ? fetch(`${CONTEXT}?keys=family.members`) : Promise.resolve(null),
+  ]);
+
+  const locations = locRes.ok ? await locRes.json() : [];
+  let memberMap = new Map();
+  if (membersRes?.ok) {
+    const ctx = await membersRes.json();
+    const members = ctx["family.members"] ?? [];
+    memberMap = new Map(members.map(m => [m.id, m]));
+  }
+
+  if (!Array.isArray(locations) || locations.length === 0) {
+    document.getElementById("map").style.display = "none";
+    document.getElementById("empty").style.display = "flex";
+    return;
+  }
+
+  const map = L.map("map", { zoomControl: false, attributionControl: false });
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+  }).addTo(map);
+
+  const bounds = [];
+
+  for (const loc of locations) {
+    const member = memberMap.get(loc.familyMemberId);
+    const name = member?.name ?? "Unknown";
+    const color = memberColor(loc.familyMemberId);
+    const lat = loc.lat, lng = loc.lng;
+    bounds.push([lat, lng]);
+
+    const icon = L.divIcon({
+      className: "",
+      html: `<div class="member-marker" style="background:${esc(color)}">${esc(initial(name))}</div>`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -18],
+    });
+
+    const time = timeAgo(loc.updatedAt);
+    const popup = `
+      <strong>${esc(name)}</strong>
+      ${loc.address ? `<br><span style="font-size:11px;color:#6b7280">${esc(loc.address)}</span>` : ""}
+      ${time ? `<br><span style="font-size:11px;color:#9ca3af">${esc(time)}</span>` : ""}
+    `;
+
+    L.marker([lat, lng], { icon }).addTo(map).bindPopup(popup);
+  }
+
+  if (bounds.length === 1) {
+    map.setView(bounds[0], 13);
+  } else {
+    map.fitBounds(bounds, { padding: [16, 16] });
+  }
+}
+
+load().catch(() => {
+  document.getElementById("map").style.display = "none";
+  document.getElementById("empty").style.display = "flex";
+});
+
+setTimeout(() => location.reload(), 5 * 60 * 1000);
+</script>
+</body>
+</html>

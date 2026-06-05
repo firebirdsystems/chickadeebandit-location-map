@@ -1,0 +1,37 @@
+{
+  "id": "location-map",
+  "name": "Location Map",
+  "version": "1.0.0",
+  "description": "Shows where family members are on an interactive map. Widget-only — pin it to your dashboard.",
+  "entrypoint": "index.html",
+  "runtime": "static",
+  "category": "family",
+  "tags": [
+    "location",
+    "map",
+    "tracking",
+    "family"
+  ],
+  "data_access": {
+    "reads": [
+      "family.members",
+      "family.location"
+    ],
+    "writes": []
+  },
+  "permissions": {
+    "default_audience": "adults",
+    "requires_approval": false
+  },
+  "storage": "none",
+  "widget": {
+    "label": "Where Is Everyone?",
+    "size": "large",
+    "entrypoint": "widget.html"
+  },
+  "icon": "📍",
+  "cdn_whitelist": [
+    "https://unpkg.com",
+    "https://*.tile.openstreetmap.org"
+  ]
+}
