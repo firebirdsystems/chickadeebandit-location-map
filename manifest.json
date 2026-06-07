@@ -15,7 +15,7 @@
   "data_access": {
     "reads": [
       "family.members",
-      "family.location"
+      "family.locations"
     ],
     "writes": []
   },

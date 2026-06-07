@@ -89,18 +89,12 @@ function timeAgo(iso) {
 }
 
 async function load() {
-  const [locRes, membersRes] = await Promise.all([
-    fetch("/api/location"),
-    CONTEXT ? fetch(`${CONTEXT}?keys=family.members`) : Promise.resolve(null),
-  ]);
+  const ctxRes = CONTEXT ? await fetch(`${CONTEXT}?keys=family.members,family.locations`) : null;
+  const ctx = ctxRes?.ok ? await ctxRes.json() : {};
 
-  const locations = locRes.ok ? await locRes.json() : [];
-  let memberMap = new Map();
-  if (membersRes?.ok) {
-    const ctx = await membersRes.json();
-    const members = ctx["family.members"] ?? [];
-    memberMap = new Map(members.map(m => [m.id, m]));
-  }
+  const locations = ctx["family.locations"] ?? [];
+  const members = ctx["family.members"] ?? [];
+  const memberMap = new Map(members.map(m => [m.id, m]));
 
   if (!Array.isArray(locations) || locations.length === 0) {
     document.getElementById("map").style.display = "none";
