@@ -78,7 +78,7 @@
 <body>
 <div class="header">
   <span class="header-title">📍 Where Is Everyone?</span>
-  <span class="header-count" id="count"></span>
+  <span class="header-count" id="count">Loading…</span>
 </div>
 <div id="map"></div>
 <div id="empty" class="empty" style="display:none">
@@ -122,6 +122,7 @@ async function load() {
   const memberMap = new Map(members.map(m => [m.id, m]));
 
   if (!Array.isArray(locations) || locations.length === 0) {
+    document.getElementById("count").textContent = "";
     document.getElementById("map").style.display = "none";
     document.getElementById("empty").style.display = "flex";
     return;
@@ -171,6 +172,7 @@ async function load() {
 }
 
 load().catch(() => {
+  document.getElementById("count").textContent = "";
   document.getElementById("map").style.display = "none";
   document.getElementById("empty").style.display = "flex";
 });
