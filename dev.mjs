@@ -98,6 +98,10 @@ http.createServer((req, res) => {
   }
 
   const stripped = url.startsWith(APP_BASE) ? url.slice(APP_BASE.length) : url.replace(/^\//, "");
+  if (stripped === "vendor/leaflet/leaflet.css" || stripped === "vendor/leaflet/leaflet.js") {
+    serve(res, path.join(__dirname, "node_modules", "leaflet", "dist", path.basename(stripped)));
+    return;
+  }
   serve(res, path.join(__dirname, "src", stripped === "" ? "index.html" : stripped));
 }).listen(PORT, () => {
   console.log(`App:        ${manifest.name} (${manifest.id})`);

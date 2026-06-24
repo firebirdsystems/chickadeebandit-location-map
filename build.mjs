@@ -39,6 +39,9 @@ function readDir(dir, base = "") {
 }
 
 const files = readDir(SRC);
+const LEAFLET_DIST = path.join(ROOT, "node_modules", "leaflet", "dist");
+files["vendor/leaflet/leaflet.css"] = fs.readFileSync(path.join(LEAFLET_DIST, "leaflet.css"), "utf8");
+files["vendor/leaflet/leaflet.js"] = fs.readFileSync(path.join(LEAFLET_DIST, "leaflet.js"), "utf8");
 if (!files["index.html"]) { console.error("Error: src/index.html is required"); process.exit(1); }
 
 // ── Read + validate migrations (storage:"db" apps only) ───────────────────────

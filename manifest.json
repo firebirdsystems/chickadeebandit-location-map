@@ -20,7 +20,7 @@
     "writes": []
   },
   "permissions": {
-    "default_audience": "adults",
+    "default_audience": "everyone",
     "requires_approval": false
   },
   "storage": "none",
@@ -31,7 +31,6 @@
   },
   "icon": "📍",
   "cdn_whitelist": [
-    "https://unpkg.com",
     "https://*.tile.openstreetmap.org"
   ]
 }
