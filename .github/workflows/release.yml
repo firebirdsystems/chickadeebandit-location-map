@@ -50,6 +50,9 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install dependencies (leaflet — bundled into dist by build.mjs)
+        run: npm install --no-audit --no-fund
+
       - name: Set version
         id: version
         run: |
