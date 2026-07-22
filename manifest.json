@@ -1,5 +1,6 @@
 {
   "id": "location-map",
+  "contexts": ["household", "shared_space"],
   "name": "Location Map",
   "version": "1.0.0",
   "description": "Shows where family members are on an interactive map. Widget-only — pin it to your dashboard.",
