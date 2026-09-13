@@ -30,8 +30,5 @@
     "size": "large",
     "entrypoint": "widget.html"
   },
-  "icon": "📍",
-  "cdn_whitelist": [
-    "https://*.tile.openstreetmap.org"
-  ]
+  "icon": "📍"
 }
