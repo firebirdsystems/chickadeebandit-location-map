@@ -33,3 +33,47 @@ export function timeAgo(iso, now = Date.now()) {
 export function sharingLabel(n) {
   return `${n} member${n !== 1 ? "s" : ""} sharing`;
 }
+
+// ── Places-only location (hub 2026-09-24) ────────────────────────────────────
+// A `family.locations` row now carries `kind`: "fix" (a member's position, as
+// before) or "place" (a places-only member inside a safe zone, pinned at the
+// ZONE CENTRE — not the member's position). Rows from an older hub have no
+// kind and are fixes. Every row the hub sends this key has coordinates, but a
+// row without them must be skipped rather than handed to Leaflet: one bad
+// marker throws, and the whole map would fall back to "No locations".
+
+export function pinnable(loc) {
+  return !!loc && Number.isFinite(loc.lat) && Number.isFinite(loc.lng);
+}
+
+export function isPlace(loc) {
+  return loc?.kind === "place";
+}
+
+/** "8:05 AM" today, "Mon 8:05 AM" on another day, in the viewer's locale. */
+export function clockTime(iso, now = new Date()) {
+  if (!iso) return "";
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return "";
+  const time = at.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return at.toDateString() === now.toDateString()
+    ? time
+    : `${at.toLocaleDateString([], { weekday: "short" })} ${time}`;
+}
+
+/**
+ * The two popup lines under a member's name. A place says where and since
+ * when ("At School" / "since 8:05 AM") — never an age, which would read as how
+ * stale a position is. A fix keeps its address and age, plus "sharing until …"
+ * when it is live only because of a temporary share.
+ */
+export function popupLines(loc, now = new Date()) {
+  if (isPlace(loc)) {
+    const since = clockTime(loc.since, now);
+    return { primary: `At ${loc.zoneName || "a safe zone"}`, secondary: since ? `since ${since}` : "" };
+  }
+  const age = timeAgo(loc.updatedAt, now.getTime());
+  const until = loc.sharingUntil ? clockTime(loc.sharingUntil, now) : "";
+  const secondary = [age, until ? `sharing until ${until}` : ""].filter(Boolean).join(" · ");
+  return { primary: loc.address ?? "", secondary };
+}

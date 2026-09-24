@@ -59,6 +59,9 @@
     }
     .empty-icon { font-size: 40px; opacity: 0.4; }
 
+    /* A place pin is the zone, not the person: squared off so it never reads
+       as a live position. */
+    .member-marker.place { border-radius: 10px; border-style: dashed; }
     .member-marker {
       display: flex;
       align-items: center;
@@ -88,7 +91,7 @@
 </div>
 
 <script type="module">
-import { memberColor, initial, esc, timeAgo, sharingLabel } from "./logic.js";
+import { memberColor, initial, esc, sharingLabel, pinnable, isPlace, popupLines } from "./logic.js";
 
 const CONTEXT = window.__CONTEXT_URL ?? "";
 
@@ -96,7 +99,8 @@ async function load() {
   const ctxRes = CONTEXT ? await fetch(`${CONTEXT}?keys=family.members,family.locations`) : null;
   const ctx = ctxRes?.ok ? await ctxRes.json() : {};
 
-  const locations = ctx["family.locations"] ?? [];
+  const rows = ctx["family.locations"] ?? [];
+  const locations = Array.isArray(rows) ? rows.filter(pinnable) : [];
   const members = ctx["family.members"] ?? [];
   const memberMap = new Map(members.map(m => [m.id, m]));
 
@@ -135,17 +139,17 @@ async function load() {
 
     const icon = L.divIcon({
       className: "",
-      html: `<div class="member-marker" style="background:${esc(color)}">${esc(initial(name))}</div>`,
+      html: `<div class="member-marker${isPlace(loc) ? " place" : ""}" style="background:${esc(color)}">${esc(initial(name))}</div>`,
       iconSize: [36, 36],
       iconAnchor: [18, 18],
       popupAnchor: [0, -20],
     });
 
-    const time = timeAgo(loc.updatedAt);
+    const { primary, secondary } = popupLines(loc);
     const popup = `
       <strong style="font-size:13px">${esc(name)}</strong>
-      ${loc.address ? `<br><span style="font-size:12px;color:#374151">${esc(loc.address)}</span>` : ""}
-      ${time ? `<br><span style="font-size:11px;color:#9ca3af">${esc(time)}</span>` : ""}
+      ${primary ? `<br><span style="font-size:12px;color:#374151">${esc(primary)}</span>` : ""}
+      ${secondary ? `<br><span style="font-size:11px;color:#9ca3af">${esc(secondary)}</span>` : ""}
     `;
 
     L.marker([lat, lng], { icon }).addTo(map).bindPopup(popup);
